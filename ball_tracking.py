@@ -8,6 +8,7 @@
 import numpy as np
 import cv2 as cv2
 import matplotlib.pyplot as plt
+from scipy.signal import medfilt
 
 def get_ball_color():
     # Couleur RGB pour la conversion
@@ -37,8 +38,7 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
     out_cnt = cv2.VideoWriter(output_video_contours, fourcc, fps, (frame_width, frame_height), isColor=True)
     out_point = cv2.VideoWriter(output_video_point, fourcc, fps, (frame_width, frame_height), isColor=True)
 
-    x_cords = np.array([])
-    y_cords = np.array([])
+    coords = np.empty((0, 2), int)
 
     #Analyse de chaque frame de la video d'entree:
     while cap.isOpened():
@@ -63,8 +63,7 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
                 mean_x= int(M["m10"]/M["m00"])
                 mean_y= int(M["m01"]/M["m00"])
 
-                x_cords = np.append(x_cords,mean_x)
-                y_cords = np.append(y_cords,mean_y)
+                coords = np.append(coords, [[mean_x, mean_y]], axis=0)
                 cv2.imshow('Frame with Contours', frame_with_contours)
             
             img_point=cv2.circle(frame,(mean_x,mean_y),10,(0,0,255),-1)
@@ -87,21 +86,49 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
     out_point.release()
 
     # Closes all the frames
-    cv2.destroyAllWindows()   
-
+    cv2.destroyAllWindows()     
+    #filtarge des valeurs
+    x_coords = coords[:, 0]  
+    y_coords = coords[:, 1]  
+    smoothed_x = medfilt(x_coords, kernel_size=5)
+    smoothed_y = medfilt(y_coords, kernel_size=5)    
+    
+    coords = np.column_stack((smoothed_x, smoothed_y))
+    
     #Affichage des coordonnees de la balle:
     print("Coordonnees de la balle:")
-    print("x: ", x_cords)
-    print("y: ", y_cords)
+    print("X: ", coords[:, 0]) 
+    print("Y: ", coords[:, 1]) 
+
 
     #Affichage des coordonnees de la balle:
-    #donner le nom du fichier au plot
-   
-    plt.title("Trajectoire de la balle:" + input_video)
-    plt.plot(x_cords, y_cords)
-    #faire en sorte que le plot soit sauvegarde dans un fichier et que le programme continue sans l'affihcer
-    plt.savefig('trajectoire_balle_'+file_name+'.png')
+    plt.title("Trajectoire de la balle: " + file_name)
+    plt.plot(coords[:, 0], coords[:, 1], marker='o')
+    plt.savefig('Trajectoire_' + file_name + '.png')
+    plt.show()
 
+    #trajectoire en fonction du temps:
+    time = np.arange(0, len(coords)/fps, 1/fps)
+    plt.title("Trajectoire de la balle en fonction du temps: " + file_name)
+    plt.plot(time, coords[:, 0], label='X')
+    plt.plot(time, coords[:, 1], label='Y')
+    plt.legend()
+    plt.xlabel('Temps (s)')
+    plt.ylabel('Position')
+    plt.savefig('Trajectoire_temps_' + file_name + '.png')
+    plt.show()
+
+    #affichage trajectoire 3D en fonction du temps (on suppose vitesse constante, pas de calcul avec stereo vision):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(coords[:, 0], time, coords[:, 1]) #on a le temps en abscisse, la position en ordonnee et la vitesse en profondeur
+    ax.set_xlabel('Horizontal(X)')
+    ax.set_ylabel('Temps(Z)')
+    ax.set_zlabel('Vertical(Y)')
+    #set elevation and azimuth
+    ax.view_init(elev=-160, azim=120)
+    plt.savefig('Trajectoire_3D_' + file_name + '.png')
+    plt.show()
 
 
 def main(): 
