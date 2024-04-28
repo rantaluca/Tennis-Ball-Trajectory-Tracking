@@ -16,7 +16,7 @@ def get_ball_color():
     color_hsv = cv2.cvtColor(color_rgb, cv2.COLOR_BGR2HSV)
     print("HSV Value:", color_hsv[0][0])
 
-def process_video(input_video, output_video_nb, output_video_contours, output_video_point, lower_bound, upper_bound, file_name):
+def process_video(input_video, output_video_nb, output_video_contours, output_video_point, lower_bound, upper_bound,file_name):
     
     cap = cv2.VideoCapture(input_video)
     
@@ -45,37 +45,46 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
         ret, frame = cap.read()
         if ret:
             
-            # creation d'un masque pour filtrer la balle:
-            filtered_frame = cv2.inRange(frame, lower_bound, upper_bound) 
+            # creation d'un masque pour filtrer la balle on filtre deux couleurs differentes pour gerer les ombres et les reflets:
+            #couleur une:
+            filtered_frame = cv2.inRange(frame, lower_bound, upper_bound)           
             
-            contours, hierarchy = cv2.findContours(filtered_frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            """
+            #couleur deux:
+            filtered_frame2 = cv2.inRange(frame, np.array([0,0,0]), np.array([20,20,20]))
+            filtered_frame = cv2.bitwise_or(filtered_frame, filtered_frame2)  
+            """
+            cv2.imshow('Filtered Frame', filtered_frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break               
+            # Rajout de cette frame a la video de sortie:
+            out_nb.write(filtered_frame)  
 
+
+            contours, hierarchy = cv2.findContours(filtered_frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             if len(contours) == 0:
                 continue
             else:
                 #frame_with_contours = cv2.drawContours(frame, contours, -1, (0,0,255), 3) #cette version dessine tous les contour
-                max_contour=max(contours, key=cv2.contourArea )
+                max_contour=max(contours, key=cv2.contourArea)
                 frame_with_contours = cv2.drawContours(frame, max_contour, -1, (0,0,255), 2) #cette version dessine le contour de plus grande surface
+                cv2.imshow('Frame with Contours', frame_with_contours)
                 out_cnt.write(frame_with_contours)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break     
                 
                 M = cv2.moments(max_contour)
-        
-                mean_x= int(M["m10"]/M["m00"])
-                mean_y= int(M["m01"]/M["m00"])
-
-                coords = np.append(coords, [[mean_x, mean_y]], axis=0)
-                cv2.imshow('Frame with Contours', frame_with_contours)
-            
-            img_point=cv2.circle(frame,(mean_x,mean_y),10,(0,0,255),-1)
-            # Rajout de cette frame a la video de sortie:
-            out_nb.write(filtered_frame)  
-            
-            out_point.write(img_point)
-            
-            cv2.imshow('Filtered Frame', filtered_frame)         
-            cv2.imshow('Point', img_point)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break      
+                if M["m00"] != 0: 
+                
+                    mean_x= int(M["m10"]/M["m00"])
+                    mean_y= int(M["m01"]/M["m00"])
+                    coords = np.append(coords, [[mean_x, mean_y]], axis=0)          
+                    img_point=cv2.circle(frame,(mean_x,mean_y),10,(0,0,255),-1)                    
+                    out_point.write(img_point)    
+                    
+                    cv2.imshow('Point', img_point)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break      
         
         else:
             break
@@ -90,13 +99,14 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
     #filtarge des valeurs
     x_coords = coords[:, 0]  
     y_coords = coords[:, 1]  
-    smoothed_x = medfilt(x_coords, kernel_size=5)
-    smoothed_y = medfilt(y_coords, kernel_size=5)    
+    smoothed_x = medfilt(x_coords, kernel_size=15)
+    smoothed_y = medfilt(y_coords, kernel_size=15)    
     
     coords = np.column_stack((smoothed_x, smoothed_y))
     
     #Affichage des coordonnees de la balle:
     print("Coordonnees de la balle:")
+    print(coords)
     print("X: ", coords[:, 0]) 
     print("Y: ", coords[:, 1]) 
 
@@ -126,7 +136,7 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
     ax.set_ylabel('Temps(Z)')
     ax.set_zlabel('Vertical(Y)')
     #set elevation and azimuth
-    ax.view_init(elev=-160, azim=120)
+    ax.view_init(elev=-165, azim=22)
     plt.savefig('Trajectoire_3D_' + file_name + '.png')
     plt.show()
 
@@ -141,9 +151,16 @@ def main():
     output_video_point = 'videos/output_point_r.mp4'
 
     #parametres du filtre:
-    lower_bound = np.array([49,154,90]) #couleur bgr de la balle sombre
-    upper_bound = np.array([119,255,226]) #couleur bgr de la balle claire
-    
+    color2 = np.array([41,200,43])
+
+    #  tolerance
+    tolerance = np.array([40, 100, 60])
+
+    lower_bound = color2 - tolerance
+    upper_bound = color2 + tolerance
+
+
+
     process_video(input_video, output_video_nb, output_video_contours,output_video_point, lower_bound, upper_bound, "droite")
 
     #Importation de la video gauche:
@@ -152,7 +169,7 @@ def main():
     output_video_contours = 'videos/output_cnt_l.mp4'
     output_video_point = 'videos/output_point_l.mp4'
 
-    process_video(input_video, output_video_nb, output_video_contours,output_video_point, lower_bound, upper_bound, "gauche")
+    process_video(input_video, output_video_nb, output_video_contours,output_video_point, lower_bound, upper_bound , "gauche")
 
 
 if __name__ == "__main__":
