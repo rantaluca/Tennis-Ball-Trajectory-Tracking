@@ -54,7 +54,7 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
             filtered_frame2 = cv2.inRange(frame, np.array([0,0,0]), np.array([20,20,20]))
             filtered_frame = cv2.bitwise_or(filtered_frame, filtered_frame2)  
             """
-            cv2.imshow('Filtered Frame', filtered_frame)
+            #cv2.imshow('Filtered Frame', filtered_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break               
             # Rajout de cette frame a la video de sortie:
@@ -68,7 +68,7 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
                 #frame_with_contours = cv2.drawContours(frame, contours, -1, (0,0,255), 3) #cette version dessine tous les contour
                 max_contour=max(contours, key=cv2.contourArea)
                 frame_with_contours = cv2.drawContours(frame, max_contour, -1, (0,0,255), 2) #cette version dessine le contour de plus grande surface
-                cv2.imshow('Frame with Contours', frame_with_contours)
+                #cv2.imshow('Frame with Contours', frame_with_contours)
                 out_cnt.write(frame_with_contours)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break     
@@ -140,6 +140,57 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
     plt.savefig('Trajectoire_3D_' + file_name + '.png')
     plt.show()
 
+    return coords
+
+def compute_3D_position_cam(coords_cam_R, coords_cam_L):
+    e = 8  #distance entre les deux cameras
+    f = 20 #distance focale
+    #d =x1-x2
+
+    #x_cam_R = e/d *x1
+    #x_cam_L = e/d *x2
+
+    x_cam_R = coords_cam_R[:, 0]*e/(coords_cam_R[:, 0]-coords_cam_L[:, 0])
+    x_cam_L = coords_cam_L[:, 0]*e/(coords_cam_R[:, 0]-coords_cam_L[:, 0])
+
+    #y_cam_R = e/d *y1
+
+    y_cam_R = coords_cam_R[:, 1]*e/(coords_cam_R[:, 0]-coords_cam_L[:, 0])
+    y_cam_L = coords_cam_L[:, 1]*e/(coords_cam_R[:, 0]-coords_cam_L[:, 0])
+
+    z_cam_R = e/(coords_cam_R[:, 0]-coords_cam_L[:, 0]) *f
+    z_cam_L = e/(coords_cam_R[:, 0]-coords_cam_L[:, 0]) *f
+
+    #affichage trajectoire 3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(x_cam_R,  z_cam_R, y_cam_R,  label='Camera droite')
+    ax.plot(x_cam_L, z_cam_L,  y_cam_L, label='Camera gauche')
+    ax.set_xlabel('Horizontal(X)')
+    ax.set_ylabel('Vertical(Y)')
+    ax.set_zlabel('Profondeur(Z)')
+    plt.savefig('Trajectoire_3D.png')
+    plt.show()
+
+    matrice_tranfo = np.array([[1, 0, 0,-3.5 ], [0, 1, 0, -9.3], [0, 0, 1, -8.7], [0, 0, 0, 1]])
+
+   #faire un vecteur x,y,z,1 pour chaque cord
+    coords_3D_x = np.dot(matrice_tranfo, np.array([x_cam_R, y_cam_R, z_cam_R, np.ones(len(x_cam_R))]))
+    print("Plot des Coordonnees 3D de la balle:")
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(coords_3D_x[0], coords_3D_x[1], coords_3D_x[2], label='Camera droite')
+    ax.set_xlabel('Horizontal(X)')
+    ax.set_ylabel('Vertical(Y)')
+    ax.set_zlabel('Profondeur(Z)')
+    plt.show()
+    plt.savefig('Trajectoire_3D_repere.png')
+
+
+
+
+
+
 
 def main(): 
     print("TIPE Tracking de balle:")
@@ -161,7 +212,7 @@ def main():
 
 
 
-    process_video(input_video, output_video_nb, output_video_contours,output_video_point, lower_bound, upper_bound, "droite")
+    coords_cam_R = process_video(input_video, output_video_nb, output_video_contours,output_video_point, lower_bound, upper_bound, "droite")
 
     #Importation de la video gauche:
     input_video = 'videos/left_short.mp4'
@@ -169,7 +220,9 @@ def main():
     output_video_contours = 'videos/output_cnt_l.mp4'
     output_video_point = 'videos/output_point_l.mp4'
 
-    process_video(input_video, output_video_nb, output_video_contours,output_video_point, lower_bound, upper_bound , "gauche")
+    coords_cam_L = process_video(input_video, output_video_nb, output_video_contours,output_video_point, lower_bound, upper_bound , "gauche")
+
+    compute_3D_position_cam(coords_cam_R, coords_cam_L)
 
 
 if __name__ == "__main__":
