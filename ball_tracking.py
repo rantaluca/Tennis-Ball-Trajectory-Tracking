@@ -67,7 +67,7 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
             else:
                 #frame_with_contours = cv2.drawContours(frame, contours, -1, (0,0,255), 3) #cette version dessine tous les contour
                 max_contour=max(contours, key=cv2.contourArea)
-                frame_with_contours = cv2.drawContours(frame, max_contour, -1, (0,0,255), 2) #cette version dessine le contour de plus grande surface
+                frame_with_contours = cv2.drawContours(frame, [max_contour], -1, (0, 0, 255), 2) #cette version dessine le contour de plus grande surface
                 #cv2.imshow('Frame with Contours', frame_with_contours)
                 out_cnt.write(frame_with_contours)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -78,7 +78,8 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
                 
                     mean_x= int(M["m10"]/M["m00"])
                     mean_y= int(M["m01"]/M["m00"])
-                    coords = np.append(coords, [[mean_x, mean_y]], axis=0)          
+                    coords = np.append(coords, [[mean_x, mean_y]], axis=0)  
+                    print("Coordonnees de la balle: ", mean_x, mean_y) 
                     img_point=cv2.circle(frame,(mean_x,mean_y),10,(0,0,255),-1)                    
                     out_point.write(img_point)    
                     
@@ -96,14 +97,15 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
 
     # Closes all the frames
     cv2.destroyAllWindows()     
-    #filtarge des valeurs
-    x_coords = coords[:, 0]  
-    y_coords = coords[:, 1]  
-    smoothed_x = medfilt(x_coords, kernel_size=15)
-    smoothed_y = medfilt(y_coords, kernel_size=15)    
+    
+
+    #on inverse les coordonnees y pour avoir le repere en bas a gauche (par defaut en haut a gauche sur openCV):
+    #coords[:, 1] = frame_height - coords[:, 1]
+    #filtarge des valeurs aberrantes:
+    smoothed_x = medfilt(coords[:, 0]  , kernel_size=15)
+    smoothed_y = medfilt(coords[:, 1], kernel_size=15)    
     
     coords = np.column_stack((smoothed_x, smoothed_y))
-    
     #Affichage des coordonnees de la balle:
     print("Coordonnees de la balle:")
     print(coords)
@@ -145,21 +147,14 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
 def compute_3D_position_cam(coords_cam_R, coords_cam_L):
     e = 8  #distance entre les deux cameras
     f = 20 #distance focale
-    #d =x1-x2
 
-    #x_cam_R = e/d *x1
-    #x_cam_L = e/d *x2
-
-    x_cam_R = coords_cam_R[:, 0]*e/(coords_cam_R[:, 0]-coords_cam_L[:, 0])
-    x_cam_L = coords_cam_L[:, 0]*e/(coords_cam_R[:, 0]-coords_cam_L[:, 0])
-
-    #y_cam_R = e/d *y1
-
-    y_cam_R = coords_cam_R[:, 1]*e/(coords_cam_R[:, 0]-coords_cam_L[:, 0])
-    y_cam_L = coords_cam_L[:, 1]*e/(coords_cam_R[:, 0]-coords_cam_L[:, 0])
-
-    z_cam_R = e/(coords_cam_R[:, 0]-coords_cam_L[:, 0]) *f
-    z_cam_L = e/(coords_cam_R[:, 0]-coords_cam_L[:, 0]) *f
+    d = coords_cam_R[:, 0] - coords_cam_L[:, 0]
+    x_cam_R = coords_cam_R[:, 0] * e / d
+    x_cam_L = coords_cam_L[:, 0] * e / d
+    y_cam_R = coords_cam_R[:, 1] * e / d
+    y_cam_L = coords_cam_L[:, 1] * e / d
+    z_cam_R = e / d * f
+    z_cam_L = e / d * f
 
     #affichage trajectoire 3D
     fig = plt.figure()
@@ -172,25 +167,67 @@ def compute_3D_position_cam(coords_cam_R, coords_cam_L):
     plt.savefig('Trajectoire_3D.png')
     plt.show()
 
-    matrice_tranfo = np.array([[1, 0, 0,-3.5 ], [0, 1, 0, -9.3], [0, 0, 1, -8.7], [0, 0, 0, 1]])
+    matrice_tranfo = np.array([
+    [0.96592583, 0, 0.25881905,-9.3],
+    [0, 1, 0, -3.5],
+    [-0.25881905, 0, 0.96592583, -8.2 ],
+    [0, 0, 0, 1]])
 
-   #faire un vecteur x,y,z,1 pour chaque cord
-    coords_3D_x = np.dot(matrice_tranfo, np.array([x_cam_R, y_cam_R, z_cam_R, np.ones(len(x_cam_R))]))
+    #faire un vecteur x,y,z,1 pour chaque cord
+    #faire ça pour y coords[:, 1] = frame_height - coords[:, 1]
+    
+
+    coords_3D = np.vstack((x_cam_L, z_cam_L, y_cam_L, np.ones(len(x_cam_R))))
+
+     
+    coords_3D_transformed = np.dot(matrice_tranfo, coords_3D)
+    #inverser les y 
+    coords_3D_transformed[2] = -coords_3D_transformed[2]
+    coords_3D_transformed[1] = -coords_3D_transformed[1]
+
     print("Plot des Coordonnees 3D de la balle:")
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot(coords_3D_x[0], coords_3D_x[1], coords_3D_x[2], label='Camera droite')
+    ax.plot(coords_3D_transformed[0], coords_3D_transformed[1], coords_3D_transformed[2], label='Camera Gauche')
     ax.set_xlabel('Horizontal(X)')
-    ax.set_ylabel('Vertical(Y)')
-    ax.set_zlabel('Profondeur(Z)')
+    ax.set_ylabel('Profondeur')
+    ax.set_zlabel('Vertical')
+    #afficher a partir de zero et dessiner un terrain de tennis en dessous  ( redefinir le slimites)
+    ax.set_xlim(0, 25)
+    ax.set_ylim(0, 20)
+    ax.set_zlim(0, 15)
+
+    # Dessiner le terrain de tennis
+    court_length = 23.77
+    court_width = 10.97
+    single_court_width = 8.23
+    net_height = 0.91  # assuming a net height for visualization
+
+    # Les lignes de double
+    ax.plot([0, 0, court_length, court_length, 0], [0, court_width, court_width, 0, 0], [0, 0, 0, 0, 0], color='red')
+
+    # Les lignes de simple
+    ax.plot([0, 0, court_length, court_length, 0],  [0, single_court_width, single_court_width, 0, 0], [0, 0, 0, 0, 0],color='red')
+
+    # Ligne centrale de service
+    ax.plot([court_length/2, court_length/2],  [0, single_court_width], [0, 0],color='red')
+
+    # Filet
+    ax.plot([court_length/2, court_length/2],  [0, court_width],[0, 0], color='red')
+
+    # Lignes de service
+    service_line_distance = 6.40  # Distance from net to service line
+    ax.plot([court_length/2 - service_line_distance, court_length/2 - service_line_distance],  [0, single_court_width], [0, 0],color='red')
+    ax.plot([court_length/2 + service_line_distance, court_length/2 + service_line_distance],  [0, single_court_width], [0, 0],color='red')
+
+    # Filet (horizontal)
+    ax.plot([court_length/2, court_length/2],  [0, court_width],[0, 0], color='white')
+
+    # Afficher les limites du terrain
+    ax.plot([0, 0, court_length, court_length, 0], [0, 0, 0, court_width, court_width],[0, 0, 0, 0, 0], color='red')
+
     plt.show()
     plt.savefig('Trajectoire_3D_repere.png')
-
-
-
-
-
-
 
 def main(): 
     print("TIPE Tracking de balle:")
