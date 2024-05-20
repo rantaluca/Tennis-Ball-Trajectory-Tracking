@@ -31,8 +31,6 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
 
     #Creation d'une video de sortie avec les memes parametres que la video d'entree:
 
-
-
     fourcc = cv2.VideoWriter_fourcc(*'mp4v') # or 'XVID'
     out_nb = cv2.VideoWriter(output_video_nb, fourcc, fps, (frame_width, frame_height), isColor=False)
     out_cnt = cv2.VideoWriter(output_video_contours, fourcc, fps, (frame_width, frame_height), isColor=True)
@@ -173,9 +171,6 @@ def compute_3D_position_cam(coords_cam_R, coords_cam_L):
     [-0.25881905, 0, 0.96592583, -8.2 ],
     [0, 0, 0, 1]])
 
-    #faire un vecteur x,y,z,1 pour chaque cord
-    #faire ça pour y coords[:, 1] = frame_height - coords[:, 1]
-    
 
     coords_3D = np.vstack((x_cam_L, z_cam_L, y_cam_L, np.ones(len(x_cam_R))))
 
@@ -188,43 +183,43 @@ def compute_3D_position_cam(coords_cam_R, coords_cam_L):
     print("Plot des Coordonnees 3D de la balle:")
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot(coords_3D_transformed[0], coords_3D_transformed[1], coords_3D_transformed[2], label='Camera Gauche')
-    ax.set_xlabel('Horizontal(X)')
-    ax.set_ylabel('Profondeur')
-    ax.set_zlabel('Vertical')
+    ax.plot(coords_3D_transformed[0], coords_3D_transformed[1], coords_3D_transformed[2], label='Camera Gauche', color='red')
+    ax.set_xlabel('Longueur')
+    ax.set_ylabel('Largeur')
+    ax.set_zlabel('Hauteur')    
     #afficher a partir de zero et dessiner un terrain de tennis en dessous  ( redefinir le slimites)
     ax.set_xlim(0, 25)
-    ax.set_ylim(0, 20)
-    ax.set_zlim(0, 15)
+    ax.set_ylim(0, 11)
+    ax.set_zlim(0, 7)
 
     # Dessiner le terrain de tennis
     court_length = 23.77
-    court_width = 10.97
+    court_width = 10.97 - 1.37 #(10.97-8.23)/2 = 1.37 ( on affiche pas la ligne de double coté droit)
     single_court_width = 8.23
     net_height = 0.91  # assuming a net height for visualization
 
     # Les lignes de double
-    ax.plot([0, 0, court_length, court_length, 0], [0, court_width, court_width, 0, 0], [0, 0, 0, 0, 0], color='red')
+    ax.plot([0, 0, court_length, court_length, 0], [0, court_width, court_width, 0, 0], [0, 0, 0, 0, 0], color='slategray')
 
     # Les lignes de simple
-    ax.plot([0, 0, court_length, court_length, 0],  [0, single_court_width, single_court_width, 0, 0], [0, 0, 0, 0, 0],color='red')
-
+    ax.plot([0, 0, court_length, court_length, 0],  [0, single_court_width, single_court_width, 0, 0], [0, 0, 0, 0, 0],color='slategray')
+    
     # Ligne centrale de service
-    ax.plot([court_length/2, court_length/2],  [0, single_court_width], [0, 0],color='red')
+    ax.plot([court_length/2, court_length/2],  [0, single_court_width], [0, 0],color='slategray')
 
     # Filet
-    ax.plot([court_length/2, court_length/2],  [0, court_width],[0, 0], color='red')
+    ax.plot([court_length/2, court_length/2],  [0, court_width],[0, 0], color='slategray')
 
     # Lignes de service
     service_line_distance = 6.40  # Distance from net to service line
-    ax.plot([court_length/2 - service_line_distance, court_length/2 - service_line_distance],  [0, single_court_width], [0, 0],color='red')
-    ax.plot([court_length/2 + service_line_distance, court_length/2 + service_line_distance],  [0, single_court_width], [0, 0],color='red')
+    ax.plot([court_length/2 - service_line_distance, court_length/2 - service_line_distance],  [0, single_court_width], [0, 0],color='slategray')
+    ax.plot([court_length/2 + service_line_distance, court_length/2 + service_line_distance],  [0, single_court_width], [0, 0],color='slategray')
 
     # Filet (horizontal)
-    ax.plot([court_length/2, court_length/2],  [0, court_width],[0, 0], color='white')
+    ax.plot([court_length/2, court_length/2],  [0, court_width],[0, 0], color='slategray')
 
     # Afficher les limites du terrain
-    ax.plot([0, 0, court_length, court_length, 0], [0, 0, 0, court_width, court_width],[0, 0, 0, 0, 0], color='red')
+    ax.plot([0, 0, court_length, court_length, 0], [0, 0, 0, court_width, court_width],[0, 0, 0, 0, 0], color='slategray')
 
     plt.show()
     plt.savefig('Trajectoire_3D_repere.png')
