@@ -10,14 +10,8 @@ import cv2 as cv2
 import matplotlib.pyplot as plt
 from scipy.signal import medfilt
 
-def get_ball_color():
-    # Couleur RGB pour la conversion
-    color_rgb = np.uint8([[[49,154,90]]])  # BGR format in OpenCV
-    color_hsv = cv2.cvtColor(color_rgb, cv2.COLOR_BGR2HSV)
-    print("HSV Value:", color_hsv[0][0])
-
 def process_video(input_video, output_video_nb, output_video_contours, output_video_point, lower_bound, upper_bound,file_name):
-    
+    #Ouvrir la video
     cap = cv2.VideoCapture(input_video)
     
     if not cap.isOpened():
@@ -47,12 +41,7 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
             #couleur une:
             filtered_frame = cv2.inRange(frame, lower_bound, upper_bound)           
             
-            """
-            #couleur deux:
-            filtered_frame2 = cv2.inRange(frame, np.array([0,0,0]), np.array([20,20,20]))
-            filtered_frame = cv2.bitwise_or(filtered_frame, filtered_frame2)  
-            """
-            #cv2.imshow('Filtered Frame', filtered_frame)
+            cv2.imshow('Filtered Frame', filtered_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break               
             # Rajout de cette frame a la video de sortie:
@@ -68,6 +57,7 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
                 frame_with_contours = cv2.drawContours(frame, [max_contour], -1, (0, 0, 255), 2) #cette version dessine le contour de plus grande surface
                 #cv2.imshow('Frame with Contours', frame_with_contours)
                 out_cnt.write(frame_with_contours)
+
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break     
                 
@@ -144,13 +134,15 @@ def process_video(input_video, output_video_nb, output_video_contours, output_vi
 
 def compute_3D_position_cam(coords_cam_R, coords_cam_L):
     e = 8  #distance entre les deux cameras
-    f = 20 #distance focale
-
+    f = 20 #distance focal
     d = coords_cam_R[:, 0] - coords_cam_L[:, 0]
+    #coordonnees 3D de la balle dans le repere de la camera droite et gauche:
     x_cam_R = coords_cam_R[:, 0] * e / d
     x_cam_L = coords_cam_L[:, 0] * e / d
+   
     y_cam_R = coords_cam_R[:, 1] * e / d
     y_cam_L = coords_cam_L[:, 1] * e / d
+   
     z_cam_R = e / d * f
     z_cam_L = e / d * f
 
@@ -176,7 +168,8 @@ def compute_3D_position_cam(coords_cam_R, coords_cam_L):
 
      
     coords_3D_transformed = np.dot(matrice_tranfo, coords_3D)
-    #inverser les y 
+   
+    #inversion de y et z pour avoir le repere en bas a gauche à cause de opencv:
     coords_3D_transformed[2] = -coords_3D_transformed[2]
     coords_3D_transformed[1] = -coords_3D_transformed[1]
 
@@ -203,7 +196,7 @@ def compute_3D_position_cam(coords_cam_R, coords_cam_L):
 
     # Les lignes de simple
     ax.plot([0, 0, court_length, court_length, 0],  [0, single_court_width, single_court_width, 0, 0], [0, 0, 0, 0, 0],color='slategray')
-    
+
     # Ligne centrale de service
     ax.plot([court_length/2, court_length/2],  [0, single_court_width], [0, 0],color='slategray')
 
@@ -220,9 +213,9 @@ def compute_3D_position_cam(coords_cam_R, coords_cam_L):
 
     # Afficher les limites du terrain
     ax.plot([0, 0, court_length, court_length, 0], [0, 0, 0, court_width, court_width],[0, 0, 0, 0, 0], color='slategray')
-
-    plt.show()
+        
     plt.savefig('Trajectoire_3D_repere.png')
+    plt.show()
 
 def main(): 
     print("TIPE Tracking de balle:")
