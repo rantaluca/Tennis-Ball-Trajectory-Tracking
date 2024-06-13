@@ -1,6 +1,4 @@
-# Calcul de la trajectoires d'une balle de tennis à partir d'une video stereo 
-
-# Calculating the trajectory of a tennis ball from a stereo video.
+# Computing the trajectory of a tennis ball using stereo video analysis.
 
 ------------------
 
