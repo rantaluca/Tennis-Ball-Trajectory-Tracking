@@ -5,22 +5,23 @@
 ------------------
 
 Le principe de ce programme est de suivre une balle de tennis dans un court de tennis en 3D. 
-Pour cela, on utilise deux cameras pour capturer la trajectoire de la balle. 
-On commence par filtrer les couleurs de la balle pour detecter sa position dans chaque frame de la video. 
-Ensuite, on calcule les coordonnees 3D de la balle dans le repere de chaque camera. 
-Enfin, on transforme les coordonnees 3D de la balle dans un repere commun pour afficher la trajectoire de la balle dans un court de tennis en 3D.
+
+- Pour cela, on utilise deux cameras pour capturer la trajectoire de la balle. 
+- On commence par filtrer les couleurs de la balle pour detecter sa position dans chaque frame de la video. 
+- Ensuite, on calcule les coordonnees 3D de la balle dans le repere de chaque camera. 
+- Enfin, on transforme les coordonnees 3D de la balle dans un repere commun pour afficher la trajectoire de la balle dans un court de tennis en 3D.
 
 Les videos sont issus d'une simulation de tennis sur unity que j'ai aussi realisé, pour capturer la même scene avec deux cameras.
 
 -----------------
 
-The principle of this program is to track a tennis ball in a tennis court in 3D.
-To do this, we use two cameras to capture the trajectory of the ball.
-We start by filtering the colors of the ball to detect its position in each frame of the video.
-Then, we calculate the 3D coordinates of the ball in the reference of each camera.
-Finally, we transform the 3D coordinates of the ball into a common reference to display the trajectory of the ball in a 3D tennis court.
+The program uses stereo vision using two cameras, generating left and right frames, to track a tennis ball on a 3D court.
 
-The videos come from a tennis simulation on unity that I also made, to capture the same scene with two cameras.
+- First, it detects the ball and its coordinates in the two frames via color filtering.
+- Then, using photogrammetry formulas and the coordinates from both the left and right image frames, it calculates the 3D coordinates of the ball within each camera's reference frame.
+- Finally, these coordinates are transformed into a common reference system to visualize the ball's trajectory on the 3D court.
+
+The footage comes from a tennis simulation I developed in Unity, designed to capture the scene simultaneously from two different camera perspectives.
 
 https://github.com/rantaluca/ball_tracking/assets/102813576/69435848-0b3f-45fc-94bc-c70752da114d
 
