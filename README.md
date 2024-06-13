@@ -2,7 +2,7 @@
 
 ------------------
 
-The program uses stereo vision using two cameras, generating left and right frames, to track a tennis ball on a 3D court.
+The program uses stereo vision using two cameras, to track a tennis ball on a 3D court.
 
 - First, it detects the ball and its coordinates in the two frames via color filtering.
 - Then, using photogrammetry formulas and the coordinates from both the left and right image frames, it calculates the 3D coordinates of the ball within each camera's reference frame.
