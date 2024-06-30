@@ -2,6 +2,8 @@
 
 This project uses stereo vision with two cameras to track a tennis ball on a 3D court.
 
+**Authors**: ANTALUCA Robert, ANTALUCA Ioana
+
 ## Process Overview
 
 1. **Ball Detection:** The ball is detected and its coordinates are extracted in the two frames via color filtering.
