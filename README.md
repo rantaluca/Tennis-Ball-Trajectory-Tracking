@@ -86,7 +86,7 @@ pip3 install matplotlib
 ### Step 2: Clone the repository:
 
 ```sh
-git clone [https://github.com/rantaluca/ball_tracking.git](https://github.com/rantaluca/ball_tracking.git)
+git clone https://github.com/rantaluca/ball_tracking.git
 cd ball_tracking
 ```
 
