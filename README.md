@@ -38,11 +38,10 @@ $` d = x_R - x_L `$
 
 The 3D coordinates of the ball in one of the camera's reference frame are calculated as:
 
-$`
- x = \frac{x_R \cdot e}{d} 
- y = \frac{y_R \cdot e}{d} 
- z = \frac{e \cdot f}{d} 
-`$
+- $` x = \frac{x_R \cdot e}{d} `$
+- $` y = \frac{y_R \cdot e}{d} `$
+- $` z = \frac{e \cdot f}{d} `$
+
 
 ### Transformation to the terrain reference frame  
 
