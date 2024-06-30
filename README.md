@@ -96,7 +96,7 @@ cd ball_tracking
 ### Step 4: Run the script:
 **Note**: The transformation matrix  T  will need to be redefined depending on the positions of the cameras relative to the tennis court in your scene. Check this link to learn about the transformation matrix.
 
-![transformation matrix ](https://www.brainvoyager.com/bv/doc/UsersGuide/CoordsAndTransforms/SpatialTransformationMatrices.html)
+[transformation matrix ](https://www.brainvoyager.com/bv/doc/UsersGuide/CoordsAndTransforms/SpatialTransformationMatrices.html)
 
 ```sh
     python ball_tracking_clean.py
